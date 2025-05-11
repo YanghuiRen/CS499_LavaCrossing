@@ -52,6 +52,7 @@ To verify that the environment is set up correctly, you can run the test script:
 # Ensure your virtual environment is activated
 # Navigate to the CS499_LavaCrossing directory
 python src/test.py
+```
 
 ### Algorithms to be Implemented
 
