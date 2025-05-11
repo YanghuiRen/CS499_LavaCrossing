@@ -55,7 +55,8 @@ python src/test.py
 ```
 
 ### Algorithms to be Implemented
-
+- Q-Learning
+- Q-Learning-λ
 
 ### Timeline (Tentative):
 - Week 7: Algorithems Implementation
