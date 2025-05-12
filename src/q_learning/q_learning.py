@@ -2,6 +2,7 @@ import numpy as np, matplotlib.pyplot as plt, gymnasium as gym, minigrid
 from minigrid.wrappers import FullyObsWrapper
 from collections import defaultdict
 from pathlib import Path
+from datetime import datetime
 
 OBJ_AGENT, OBJ_GOAL = 10, 8
 def first_pos(img, idx):
@@ -61,11 +62,18 @@ def run_trial(alpha, seed, episodes=2000):
     env.close()
     return rewards
 
-Path("results_compare").mkdir(exist_ok=True)
+
+# Save results and generate images
+'''
+timestamp = datetime.now().strftime("%b%d_%H%M")
+results_dir = f"results/{timestamp}_alpha_compare"
+Path(results_dir).mkdir(parents=True, exist_ok=True)
+Path("images").mkdir(exist_ok=True)
+
 curves = {}
 for alpha in (0.1, 0.5):
     curves[alpha] = np.mean([run_trial(alpha, s) for s in range(5)], axis=0)
-    np.save(f"results_compare/reward_alpha{alpha}.npy", curves[alpha])
+    np.save(f"{results_dir}/reward_alpha{alpha}.npy", curves[alpha])
 
 win = 100
 avg = lambda x: np.convolve(x, np.ones(win)/win, mode="valid")
@@ -77,5 +85,8 @@ plt.plot(x, avg(curves[0.5]), label="α = 0.5", lw=2)
 plt.xlabel("Episode"); plt.ylabel(f"Average reward ({win}-episode)")
 plt.title("Q-Learning α Comparison (5 trials)")
 plt.legend(); plt.tight_layout()
-plt.savefig("results_compare/q_learning_alpha_compare.png", dpi=300)
-print("Saved figure → results_compare/q_learning_alpha_compare.png")
+
+plt.savefig("images/q_learning_alpha_compare.png", dpi=300)
+print("Saved figure → images/q_learning_alpha_compare.png")
+print(f"Saved data → {results_dir}/")
+'''
