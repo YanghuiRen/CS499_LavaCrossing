@@ -33,16 +33,15 @@ def main():
     """
     A little bit of testing to ensure that minigrid works. Can be deleted
     """
-    # env = gym.make("MiniGrid-LavaCrossingS11N5-v0", render_mode='human')
-    # obs, _ = env.reset()
-    # print(obs['image'].shape)
+    env = header.gym.make("MiniGrid-LavaCrossingS11N5-v0", render_mode='human')
+    obs, _ = env.reset()
+    print(obs['image'].shape)
     
-    # done = False
-    # while not done:
-    #     env.render()
-    #     action = env.action_space.sample()
-    #     obs, r, done, truncated, info = env.step(action)
-    print(f"max trials: {header.MAX_TRIALS}")
+    done = False
+    while not done:
+        env.render()
+        action = env.action_space.sample()
+        obs, r, done, truncated, info = env.step(action)
 
 if __name__ == "__main__":
     main()
