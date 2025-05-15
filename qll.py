@@ -1,27 +1,4 @@
-import gymnasium as gym
-
-from minigrid.wrappers import SymbolicObsWrapper
-# from minigrid.core.constants import COLOR_NAMES
-# from minigrid.core.grid import Grid
-# from minigrid.core.mission import MissionSpace
-# from minigrid.core.world_object import Door, Goal, Key, Wall
-# from minigrid.manual_control import ManualControl
-# from minigrid.minigrid_env import MiniGridEnv
-
-
-def main():
-    """
-    A little bit of testing to ensure that minigrid works. Can be deleted
-    """
-    env = gym.make("MiniGrid-LavaCrossingS11N5-v0")
-    obs, _ = env.reset()
-    print(obs['image'].shape)
-    
-    # manual_control = ManualControl(env, seed=42)
-    # manual_control.start()
-
-
-
+import header
 
 
 """
@@ -40,10 +17,32 @@ Repeat for each episode:
             else e(s, a) = 0
     until s is terminal
 """
+def qlearn_lambda():
+    ...
 
 
 
 
+
+
+
+
+
+
+def main():
+    """
+    A little bit of testing to ensure that minigrid works. Can be deleted
+    """
+    # env = gym.make("MiniGrid-LavaCrossingS11N5-v0", render_mode='human')
+    # obs, _ = env.reset()
+    # print(obs['image'].shape)
+    
+    # done = False
+    # while not done:
+    #     env.render()
+    #     action = env.action_space.sample()
+    #     obs, r, done, truncated, info = env.step(action)
+    print(f"max trials: {header.MAX_TRIALS}")
 
 if __name__ == "__main__":
     main()
