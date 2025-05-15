@@ -1,8 +1,10 @@
 import numpy
-import matplot.pyplot as plt
+import matplotlib.pyplot as plt
 import gymnasium as gym
 import random
-import encode_state
+import sys, os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from encode_state import encode_state
 
 from minigrid.envs import crossing
 from minigrid.wrappers import SymbolicObsWrapper
