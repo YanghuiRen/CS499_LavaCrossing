@@ -1,25 +1,26 @@
 import gymnasium as gym
 import numpy as np
 import minigrid
-import matplotlib as plt
-import const
+import matplotlib.pyplot as plt
 
 from collections import defaultdict
 
 from minigrid.wrappers import SymbolicObsWrapper
-from minigrid.env import crossing
+from minigrid.envs import crossing
 from minigrid.core.constants import OBJECT_TO_IDX
 
 MAX_TRIALS = 50
-N_EPISODES = 100
-MAX_STEPS = 100
+N_EPISODES = 1000
+MAX_STEPS = 300
 
 GAMMA = 0.975
-ALPHA = 0.5
-EPSILON = 0.3
-LAMBDA = 0.9
+ALPHA = 0.3
+LAMBDA = 0.95
 
 NUM_ACTIONS = 3
+
+EPSILON_START, EPSILON_END, DECAY = 1.0, 0.05, 0.995
+EPSILON = EPSILON_START
 
 # used for plotting graphs
 steps_log = []
@@ -79,10 +80,13 @@ next_action := a'
 
 """
 def qlearn_lambda(env):
-    Q = defaultdict(lambda: np.zeros(NUM_ACTIONS))
-    E = defaultdict(lambda: np.zeros(NUM_ACTIONS))
+    # Q = defaultdict(lambda: np.zeros(NUM_ACTIONS))
+    Q = defaultdict(lambda: np.zeros(NUM_ACTIONS, dtype=np.float64))
+    eps = EPSILON
     
     for ep_idx in range(N_EPISODES):
+        # E = defaultdict(lambda: np.zeros(NUM_ACTIONS))
+        E = defaultdict(lambda: np.zeros(NUM_ACTIONS, dtype=np.float64))
         # init s, a
         obs, _ = env.reset()
         current_state = encode_state(obs)
@@ -96,10 +100,11 @@ def qlearn_lambda(env):
         # for each step in the episode
         for _ in range(MAX_STEPS):
             # choose a' from s' using policy Q (eps-greedy)
-            current_state_hash = env.hash(current_state)
+            # current_state_hash = env.hash(current_state)
+            current_state_hash = current_state
             next_action = None
             
-            if np.random.rand() < EPSILON:
+            if np.random.rand() < eps:
                 next_action =  np.random.randint(NUM_ACTIONS)
             else:
                 try:
@@ -112,43 +117,57 @@ def qlearn_lambda(env):
             next_obs, reward, done, truncated, _ = env.step(next_action)
             
             # use next observation to get next state
-            next_state = encode_state(next_obs)
-            next_state_hash = env.hash(next_state)
+            # next_state = encode_state(next_obs)
+            next_state = current_state if done or truncated else encode_state(next_obs)
+            # next_state_hash = env.hash(next_state)
+            next_state_hash = next_state
             
             # compute a*, delta, INC e(s, a)
             optimal_action = np.argmax(Q[next_state_hash])
             if Q[next_state_hash][optimal_action] == Q[next_state_hash][next_action]: # if a' ties for the max, then a* <-- a'
                 optimal_action = next_action
-            delta = reward + GAMMA * Q[next_state_hash][optimal_action] - Q[current_state][current_action]
+            # delta = reward + GAMMA * Q[next_state_hash][optimal_action] - Q[current_state][current_action]
+            delta = reward + GAMMA * Q[next_state_hash][optimal_action] - Q[current_state_hash][current_action]
             E[current_state_hash][current_action] += 1
                 
             # Q-value update
             # note indexes in Q, E should align
-            for idx in Q:
+            # for idx in Q:
+            for idx in list(E.keys()): # stil can update while State appears in E but not in Q
                 # watch here: 
                 # numpy broadcasting should ensure the indicies match, but may not work as intended
                 Q[idx] += ALPHA * delta * E[idx]
-                E[idx] *= LAMBDA * GAMMA if optimal_action == next_action else 0
-                
+                # E[idx] *= LAMBDA * GAMMA if optimal_action == next_action else 0
+                if next_action == optimal_action:
+                    E[idx] *= GAMMA * LAMBDA
+                else:
+                    E[idx] = np.zeros(NUM_ACTIONS)
+      
             
             # update reward values and log data for plotting
             episode_reward += reward
             episode_steps += 1
             
             if done:
-                steps_log[ep_idx] = episode_steps
-                rewards_log[ep_idx] = episode_reward
-                print("Agent successfully completed an episode.")
+                # steps_log[ep_idx] = episode_steps
+                # rewards_log[ep_idx] = episode_reward
+                steps_log.append(episode_steps)
+                rewards_log.append(episode_reward)
+                # print("Agent successfully completed an episode.")
                 break
             if truncated:
-                steps_log[ep_idx] = episode_steps
-                rewards_log = 0
-                print("Agent did not successfully complete an episode. ")
+                # steps_log[ep_idx] = episode_steps
+                steps_log.append(episode_steps)
+                # rewards_log = 0
+                rewards_log.append(0)
+                # print("Agent did not successfully complete an episode. ")
                 break
-            
+
             # prep for next episode step
             current_state = next_state
             current_action = next_action
+
+        eps = max(EPSILON_END, eps * DECAY)
             
             # episode still in progress
         # end of each step in episode loop
@@ -158,12 +177,36 @@ def qlearn_lambda(env):
 
 
 
+def main():
+    env_id = "MiniGrid-LavaCrossingS9N1-v0"
+    env = gym.make(env_id, render_mode=None)
+    env = SymbolicObsWrapper(env)
+    obs, _ = env.reset(seed=42)
 
+    Q = qlearn_lambda(env)
+    total_states = len(Q)
+    max_q        = max(np.max(v) for v in Q.values())
+    avg_reward   = sum(rewards_log[-10:]) / 10
+    avg_steps    = sum(steps_log[-10:]) / 10
+    succ_last50 = sum(r > 0 for r in rewards_log[-50:]) / 50
 
+    print("\n=== Training Hy-pra ===")
+    print(f"Env         : {env_id}")
+    print(f"Episodes    : {N_EPISODES}")
+    print(f"Max steps   : {MAX_STEPS}")
+    print(f"Gamma       : {GAMMA}")
+    print(f"Alpha       : {ALPHA}")
+    print(f"Epsilon start, end, decay: {EPSILON_START, EPSILON_END, DECAY}")
+    print(f"Lambda      : {LAMBDA}")
+
+    print("\n Results:")
+    print(f"Unique states learned : {total_states}")
+    print(f"Max Q value           : {max_q:.3f}")
+    print(f"Avg reward (last 10)  : {avg_reward:.3f}")
+    print(f"Avg steps  (last 10)  : {avg_steps:.1f}")
+    print(f"Success rate (last 50): {succ_last50:.1%}")
 
 
 
 if __name__ == "__main__":
-    env = gym.make("MiniGrid-LavaCrossingS11N5-v0")
-    env = SymbolicObsWrapper(env)
-    obs, _ = env.reset(seed=42)
+    main()
