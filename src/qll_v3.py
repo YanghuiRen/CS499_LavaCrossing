@@ -28,10 +28,28 @@ def encode_state(obs):
 # for debugging purposes
 def get_termination_reason(env):
     pos = env.unwrapped.agent_pos
+    print(f"Agent pos at termination: {pos}")
     cell = env.unwrapped.grid.get(*pos)
     if cell is None:
+        print("Agent is on an empty cell.")
         return "empty"
     return cell.type
+
+def print_grid(env):
+    grid = env.unwrapped.grid
+    width, height = grid.width, grid.height
+
+    print("=== Grid Contents ===")
+    for y in range(height):
+        row = []
+        for x in range(width):
+            cell = grid.get(x, y)
+            if cell is None:
+                row.append(".")  # Empty cell
+            else:
+                row.append(cell.type[0].upper())  # First letter of type (e.g., G = goal, L = lava)
+        print(" ".join(row))
+
 
 """
 Q-learning(lambda). Assume the passed in environment is a lava crossing env with a SymbolicObsWrapper.
@@ -72,6 +90,7 @@ def qlearn_lambda(env):
         print(f"\t\t starting episode {ep_idx + 1}")
         # init s, a
         obs, _ = env.reset()
+        print_grid(env)
         current_state = encode_state(obs)
         current_action = np.random.randint(NUM_ACTIONS)
         
@@ -141,16 +160,16 @@ def qlearn_lambda(env):
             
             
             # episode termination check
-            if done:
-                reason = get_termination_reason(env)
-                if reason == "goal":
-                    print(f"SUCCESS: Agent completed episode {ep_idx + 1}")
-                elif reason == "lava":
-                    print(f"FAILURE: Agent fell into lava on episode {ep_idx + 1}")
-                elif truncated:
-                    print(f"TIMEOUT: Agent failed to complete episode {ep_idx + 1}")
-                else:
-                    print(f"UNKOWN: Agent failed for unkown reason on episode {ep_idx + 1}")
+            if done or truncated:
+                # reason = get_termination_reason(env)
+                # if reason == "goal":
+                #     print(f"SUCCESS: Agent completed episode {ep_idx + 1}")
+                # elif reason == "lava":
+                #     print(f"FAILURE: Agent fell into lava on episode {ep_idx + 1}")
+                # elif truncated:
+                #     print(f"TIMEOUT: Agent failed to complete episode {ep_idx + 1}")
+                # else:
+                #     print(f"UNKOWN: Agent failed for unkown reason on episode {ep_idx + 1}")
                     
                 steps_log.append(episode_steps)
                 rewards_log.append(episode_reward)
@@ -161,7 +180,17 @@ def qlearn_lambda(env):
             current_action = next_action
             
             # episode still in progress
-        print(f"\t Termination condition: {get_termination_reason(env)}")
+        
+        reason = get_termination_reason(env)
+        print(f"\t Termination condition: {reason}")
+        if reason == "goal":
+            print(f"SUCCESS: Agent completed episode {ep_idx + 1}")
+        elif reason == "lava":
+            print(f"FAILURE: Agent fell into lava on episode {ep_idx + 1}")
+        elif truncated:
+            print(f"TIMEOUT: Agent failed to complete episode {ep_idx + 1}")
+        else:
+            print(f"UNKOWN: Agent failed for unkown reason on episode {ep_idx + 1}")
         # end of each step in episode loop
     # end of each episode loop
         
@@ -204,8 +233,9 @@ def qlearn_lambda(env):
 
 
 if __name__ == "__main__":
-    env = gym.make("MiniGrid-LavaCrossingS11N5-v0")
+    # env = gym.make("MiniGrid-LavaCrossingS11N5-v0")
+    env = gym.make("MiniGrid-LavaCrossingS9N1-v0")
     env = SymbolicObsWrapper(env)
-    obs, _ = env.reset()
+    obs, _ = env.reset(seed=42)
     qlearn_lambda(env)
     env.close()
