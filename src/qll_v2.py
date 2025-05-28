@@ -1,7 +1,7 @@
 import gymnasium as gym
 import numpy as np
 import minigrid
-import matplotlib as plt
+import matplotlib.pyplot as plt
 
 from collections import defaultdict
 
@@ -20,35 +20,6 @@ LAMBDA = 0.9
 
 NUM_ACTIONS = 3
 
-# used for plotting graphs
-steps_log = []
-rewards_log = []
-
-
-# def encode_state(obs):
-#     """
-#     encode_state(obs):
-#         return tuple, hashtable for Q-table;
-#     """
-#     image = obs['image'] # should return shape (S, S, 3)
-#     agent_idx = OBJECT_TO_IDX['agent']
-#     goal_idx = OBJECT_TO_IDX['goal']
-#     lava_idx = OBJECT_TO_IDX['lava']
-
-#     # find agent pos:
-#     agent_pos = tuple(int(x) for x in np.argwhere(image[:,:,2] == agent_idx)[0])
-
-#     # agent direction:
-#     agent_dir = int(obs['direction']) # 0, 1, 2, 3
-
-#     # goal position:
-#     goal_pos = tuple(int(x) for x in np.argwhere(image[:,:,2] == goal_idx)[0])
-
-#     # lava distribution:
-#     lava_pos_list = [tuple(int(x) for x in pos) for pos in np.argwhere(image[:,:,2] == lava_idx)]
-#     lava_pos_tuple = tuple(sorted(lava_pos_list))
-
-#     return (agent_pos, agent_dir, goal_pos, lava_pos_tuple)
 
 def encode_state(obs):
     
@@ -77,7 +48,7 @@ Repeat for each episode:
 ==============================
 ===== Definitions ============
 ==============================
-current_state_hash := s
+current_state := s
 current_action := a
 next_state := s'
 next_action := a'
@@ -86,6 +57,10 @@ next_action := a'
 def qlearn_lambda(env):
     Q = defaultdict(lambda: np.zeros(NUM_ACTIONS))
     E = defaultdict(lambda: np.zeros(NUM_ACTIONS))
+    
+    # used for plotting graphs
+    steps_log = []
+    rewards_log = []
     
     for ep_idx in range(N_EPISODES):
         # init s, a
@@ -101,31 +76,25 @@ def qlearn_lambda(env):
         # for each step in the episode
         for _ in range(MAX_STEPS):
             # choose a' from s' using policy Q (eps-greedy)
-            current_state_hash = env.hash(current_state)
             next_action = None
             
             if np.random.rand() < EPSILON:
                 next_action =  np.random.randint(NUM_ACTIONS)
             else:
-                try:
-                    next_action = np.argmax(Q[current_state_hash])
-                except:
-                    Q[current_state_hash] = np.zeros(NUM_ACTIONS)
-                    next_action = np.argmax(Q[current_state_hash])
+                next_action = np.argmax(Q[current_state])
                     
             # agent take an action
             next_obs, reward, done, truncated, _ = env.step(next_action)
             
             # use next observation to get next state
             next_state = encode_state(next_obs)
-            next_state_hash = env.hash(next_state)
             
             # compute a*, delta, INC e(s, a)
-            optimal_action = np.argmax(Q[next_state_hash])
-            if Q[next_state_hash][optimal_action] == Q[next_state_hash][next_action]: # if a' ties for the max, then a* <-- a'
+            optimal_action = np.argmax(Q[next_state])
+            if Q[next_state][optimal_action] == Q[next_state][next_action]: # if a' ties for the max, then a* <-- a'
                 optimal_action = next_action
-            delta = reward + GAMMA * Q[next_state_hash][optimal_action] - Q[current_state][current_action]
-            E[current_state_hash][current_action] += 1
+            delta = reward + GAMMA * Q[next_state][optimal_action] - Q[current_state][current_action]
+            E[current_state][current_action] += 1
                 
             # Q-value update
             # note indexes in Q, E should align
@@ -142,14 +111,14 @@ def qlearn_lambda(env):
             episode_steps += 1
             
             if done:
-                steps_log[ep_idx] = episode_steps
-                rewards_log[ep_idx] = episode_reward
-                print("Agent successfully completed an episode.")
+                steps_log.append(episode_steps)
+                rewards_log.append(episode_reward)
+                print(f"Agent successfully completed episode {ep_idx + 1}.")
                 break
             if truncated:
-                steps_log[ep_idx] = episode_steps
-                rewards_log = 0
-                print("Agent did not successfully complete an episode. ")
+                steps_log.append(episode_steps)
+                rewards_log.append(0)
+                print(f"Agent did failed to complete episode {ep_idx + 1}.")
                 break
             
             # prep for next episode step
@@ -158,6 +127,35 @@ def qlearn_lambda(env):
             
             # episode still in progress
         # end of each step in episode loop
+    # end of each episode loop
+        
+        
+        
+        
+        
+        
+    # Plotting Rewards
+    plt.figure(figsize=(12, 5))
+
+    plt.subplot(1, 2, 1)
+    plt.plot(rewards_log, label='Episode Reward')
+    plt.xlabel('Episode')
+    plt.ylabel('Reward')
+    plt.title('Reward per Episode')
+    plt.grid(True)
+    plt.legend()
+
+    # Plotting Steps
+    plt.subplot(1, 2, 2)
+    plt.plot(steps_log, label='Steps per Episode', color='orange')
+    plt.xlabel('Episode')
+    plt.ylabel('Steps')
+    plt.title('Steps per Episode')
+    plt.grid(True)
+    plt.legend()
+
+    plt.tight_layout()
+    plt.show()
         
     return Q
 
