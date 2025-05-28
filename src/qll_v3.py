@@ -10,7 +10,7 @@ from minigrid.envs import crossing
 # from minigrid.core.constants import OBJECT_TO_IDX
 
 MAX_TRIALS = 50
-N_EPISODES = 100
+N_EPISODES = 5
 MAX_STEPS = 100
 
 GAMMA = 0.975
@@ -18,6 +18,13 @@ ALPHA = 0.5
 EPSILON = 0.3
 LAMBDA = 0.9
 
+"""
+MiniGrid Action Definitions
+
+0: turn left:       'left'
+1: turn right:      'right'
+2: move forward:    'forward'
+"""
 NUM_ACTIONS = 3
 
 # Flatten the symbolic image and convert to tuple
@@ -38,17 +45,30 @@ def get_termination_reason(env):
 def print_grid(env):
     grid = env.unwrapped.grid
     width, height = grid.width, grid.height
+    agent_pos = env.unwrapped.agent_pos
 
     print("=== Grid Contents ===")
     for y in range(height):
         row = []
         for x in range(width):
             cell = grid.get(x, y)
+            char = "."
             if cell is None:
-                row.append(".")  # Empty cell
+                char = "."
             else:
-                row.append(cell.type[0].upper())  # First letter of type (e.g., G = goal, L = lava)
+                # First letter uppercase
+                char = cell.type[0].upper()
+
+            # Overlay agent
+            if (x, y) == tuple(agent_pos):
+                if char == "L":
+                    char = "X"  # Agent on lava marked as X
+                else:
+                    char = "A"  # Agent on normal cell
+            row.append(char)
         print(" ".join(row))
+
+
 
 
 """
@@ -104,7 +124,7 @@ def qlearn_lambda(env):
             # choose a' from s' using policy Q (eps-greedy)
             next_action = None
             
-            if np.random.rand() < EPSILON:
+            if np.random.rand() <= EPSILON:
                 next_action =  np.random.randint(NUM_ACTIONS)
             else:
                 next_action = np.argmax(Q[current_state])
@@ -140,6 +160,16 @@ def qlearn_lambda(env):
             if E[current_state][current_action] is None:
                 print("WARNING: e(s, a) is None")
                 
+                
+            pos = tuple(env.unwrapped.agent_pos)
+            DIR_MAP = {
+                0: 'right',
+                1: 'down',
+                2: 'left',
+                3: 'up'
+            }
+            print(f"\t Agent took action {current_action} in state {pos}: currently facing {DIR_MAP[env.unwrapped.agent_dir]}")
+                
             # Q-value update
             # note indexes in Q, E should align
             for s in Q:
@@ -154,7 +184,7 @@ def qlearn_lambda(env):
                     E[s][a] *= LAMBDA * GAMMA if optimal_action == next_action else 0
                 
             
-            # update reward values and log data for plotting
+            # update reward values
             episode_reward += reward
             episode_steps += 1
             
@@ -190,7 +220,7 @@ def qlearn_lambda(env):
         elif truncated:
             print(f"TIMEOUT: Agent failed to complete episode {ep_idx + 1}")
         else:
-            print(f"UNKOWN: Agent failed for unkown reason on episode {ep_idx + 1}")
+            print(f"UNKOWN: Agent failed for unkown reason on episode {ep_idx + 1}: steps at termination: {episode_steps}")
         # end of each step in episode loop
     # end of each episode loop
         
