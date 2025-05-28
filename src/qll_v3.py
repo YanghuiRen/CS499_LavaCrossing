@@ -18,6 +18,18 @@ ALPHA = 0.5
 EPSILON = 0.3
 LAMBDA = 0.9
 
+DIR_MAP = { # DEBUG
+    0: 'right',
+    1: 'down',
+    2: 'left',
+    3: 'up'
+}
+ACT_MAP = { # DEBUG
+    0: 'left',
+    1: 'right',
+    2: 'forward'
+}
+
 """
 MiniGrid Action Definitions
 
@@ -42,15 +54,14 @@ def get_termination_reason(env):
         return "empty"
     return cell.type
 
-def print_grid(env):
+def print_grid(env, ep_num):
     grid = env.unwrapped.grid
-    width, height = grid.width, grid.height
     agent_pos = env.unwrapped.agent_pos
 
-    print("=== Grid Contents ===")
-    for y in range(height):
+    print(f"======= Grid Contents: Ep {ep_num} =======")
+    for y in range(grid.height):
         row = []
-        for x in range(width):
+        for x in range(grid.width):
             cell = grid.get(x, y)
             char = "."
             if cell is None:
@@ -107,10 +118,10 @@ def qlearn_lambda(env):
     rewards_log = []
     
     for ep_idx in range(N_EPISODES):
-        print(f"\t\t starting episode {ep_idx + 1}")
         # init s, a
         obs, _ = env.reset()
-        print_grid(env)
+        print_grid(env, ep_idx + 1) # DEBUG
+        print(f"Initial Orientation: {DIR_MAP[env.unwrapped.agent_dir]}")
         current_state = encode_state(obs)
         current_action = np.random.randint(NUM_ACTIONS)
         
@@ -122,33 +133,29 @@ def qlearn_lambda(env):
         # for each step in the episode
         for _ in range(MAX_STEPS):
             # choose a' from s' using policy Q (eps-greedy)
-            next_action = None
-            
-            if np.random.rand() <= EPSILON:
-                next_action =  np.random.randint(NUM_ACTIONS)
-            else:
-                next_action = np.argmax(Q[current_state])
+                
+            next_action = np.random.randint(NUM_ACTIONS) if np.random.rand() <= EPSILON else np.argmax(Q[current_state])
                     
             # agent take an action
             next_obs, reward, done, truncated, _ = env.step(next_action)
-            if next_obs is None:
+            if next_obs is None: # DEBUG
                 print(f"WARNING: next_obs is None!!!!!")
-            if reward is None:
+            if reward is None: # DEBUG
                 print(f"WARNING: reward is None!!!!!")
             
             # use next observation to get next state
             next_state = encode_state(next_obs)
-            if next_state is None:
+            if next_state is None: # DEBUG
                 print(f"WARNING: next_state is None!!!!!")
             
             # compute a*, delta, INC e(s, a)
             optimal_action = np.argmax(Q[next_state])
-            if optimal_action is None:
+            if optimal_action is None: # DEBUG
                 print(f"WARNING: optimal_action is None!!!!!")
                 
-            if Q[next_state][optimal_action] is None:
+            if Q[next_state][optimal_action] is None: # DEBUG
                 print(f"WARNING: Q(s', a*) is None!!!!!")
-            if Q[next_state][next_action] is None:
+            if Q[next_state][next_action] is None: # DEBUG
                 print(f"WARNING: Q(s', a') is None!!!!!")
                 
                 
@@ -157,18 +164,12 @@ def qlearn_lambda(env):
                 optimal_action = next_action
             delta = reward + GAMMA * Q[next_state][optimal_action] - Q[current_state][current_action]
             E[current_state][current_action] += 1
-            if E[current_state][current_action] is None:
+            if E[current_state][current_action] is None: # DEBUG
                 print("WARNING: e(s, a) is None")
                 
                 
-            pos = tuple(env.unwrapped.agent_pos)
-            DIR_MAP = {
-                0: 'right',
-                1: 'down',
-                2: 'left',
-                3: 'up'
-            }
-            print(f"\t Agent took action {current_action} in state {pos}: currently facing {DIR_MAP[env.unwrapped.agent_dir]}")
+            pos = tuple(env.unwrapped.agent_pos) # DEBUG
+            print(f"\t Agent took action {current_action}: {ACT_MAP[current_action]} in state {pos}: currently facing {DIR_MAP[env.unwrapped.agent_dir]}")
                 
             # Q-value update
             # note indexes in Q, E should align
@@ -176,9 +177,9 @@ def qlearn_lambda(env):
                 for a in range(NUM_ACTIONS):
                     # watch here: 
                     # numpy broadcasting should ensure the indicies match, but may not work as intended
-                    if Q[s][a] is None:
+                    if Q[s][a] is None: # DEBUG
                         print("WARNING: Q(s, a) is None!!!!!")
-                    if E[s][a] is None:
+                    if E[s][a] is None: # DEBUG
                         print("WARNING: e(s, a) is None!!!!!")
                     Q[s][a] += ALPHA * delta * E[s][a]
                     E[s][a] *= LAMBDA * GAMMA if optimal_action == next_action else 0
@@ -188,29 +189,19 @@ def qlearn_lambda(env):
             episode_reward += reward
             episode_steps += 1
             
-            
-            # episode termination check
-            if done or truncated:
-                # reason = get_termination_reason(env)
-                # if reason == "goal":
-                #     print(f"SUCCESS: Agent completed episode {ep_idx + 1}")
-                # elif reason == "lava":
-                #     print(f"FAILURE: Agent fell into lava on episode {ep_idx + 1}")
-                # elif truncated:
-                #     print(f"TIMEOUT: Agent failed to complete episode {ep_idx + 1}")
-                # else:
-                #     print(f"UNKOWN: Agent failed for unkown reason on episode {ep_idx + 1}")
-                    
-                steps_log.append(episode_steps)
-                rewards_log.append(episode_reward)
-                break
-            
             # prep for next episode step
             current_state = next_state
             current_action = next_action
             
+            
+            # episode termination check
+            if done or truncated:
+                steps_log.append(episode_steps)
+                rewards_log.append(episode_reward)
+                break
             # episode still in progress
         
+        # episode has ended here
         reason = get_termination_reason(env)
         print(f"\t Termination condition: {reason}")
         if reason == "goal":
@@ -264,7 +255,7 @@ def qlearn_lambda(env):
 
 if __name__ == "__main__":
     # env = gym.make("MiniGrid-LavaCrossingS11N5-v0")
-    env = gym.make("MiniGrid-LavaCrossingS9N1-v0")
+    env = gym.make("MiniGrid-LavaCrossingS9N1-v0") # DEBUG
     env = SymbolicObsWrapper(env)
     obs, _ = env.reset(seed=42)
     qlearn_lambda(env)
