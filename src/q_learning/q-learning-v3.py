@@ -10,13 +10,13 @@ from minigrid.wrappers import SymbolicObsWrapper
 #from minigrid.wrappers import ImgObsWrapper
 
 MAX_TRIALS = 50
-N_EPISODES = 500
+N_EPISODES = 100
 MAX_STEPS = 100
 NUM_ACTIONS = 3
 
 GAMMA = 0.975
 ALPHA = 0.5
-EPSILON = 0.3
+EPSILON = 0.5
 
 # Action Space Representation
 # 0 - Left : Turn Left
@@ -77,7 +77,7 @@ def qlearning():
             if next_state not in Q: 
                 Q[next_state] = numpy.zeros(NUM_ACTIONS)
 
-            Q[current_state][action] += ALPHA * (reward + GAMMA * numpy.max(Q[next_state] - Q[current_state][action]))
+            Q[current_state][action] += ALPHA * (reward + GAMMA * numpy.max(Q[next_state]) - Q[current_state][action])
     
             # Update the reward values for this episode
             episode_reward += reward
@@ -118,7 +118,7 @@ def qlearning():
 
 
 if __name__ == "__main__":
-    env = gym.make("MiniGrid-LavaCrossingS11N5-v0")
+    env = gym.make("MiniGrid-LavaCrossingS9N3-v0")
     env = SymbolicObsWrapper(env)
     Q, steps_log, rewards_log = qlearning()
     env.close()
