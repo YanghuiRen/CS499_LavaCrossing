@@ -8,7 +8,7 @@ from encode_state import encode_state
 
 from minigrid.envs import crossing
 from minigrid.wrappers import SymbolicObsWrapper
-from minigrid.wrappers import ImgObsWrapper
+#from minigrid.wrappers import ImgObsWrapper
 
 MAX_TRIALS = 50
 N_EPISODES = 100
@@ -18,9 +18,6 @@ NUM_ACTIONS = 3
 GAMMA = 0.975
 ALPHA = 0.5
 EPSILON = 0.3
-
-env = gym.make("MiniGrid-LavaCrossingS11N5-v0")
-env = ImgObsWrapper(env)
 
 # Action Space Representation
 # 0 - Left : Turn Left
@@ -47,7 +44,7 @@ def qlearning():
 
             # Select an action derived from epsilon greedy policy
             if random.random() < EPSILON: 
-                action = random.randint(0, 1-NUM_ACTIONS)
+                action = random.randint(0, NUM_ACTIONS - 1)
             else: 
                 try: 
                     action = numpy.argmax(Q[current_state_hash])
@@ -64,26 +61,20 @@ def qlearning():
 
             # Q-Value update
             if current_state_hash not in Q: 
-                Q[current_state_hash] = random.randint(0, 1-NUM_ACTIONS)
+                Q[current_state_hash] = numpy.zeros(NUM_ACTIONS)
             if next_state_hash not in Q: 
-                Q[next_state_hash] = random.randint(0, 1-NUM_ACTIONS)
+                Q[next_state_hash] = numpy.zeros(NUM_ACTIONS)
 
-            Q[current_state_hash][action] += ALPHA * (reward + GAMMA + numpy.argmax(Q[next_state_hash] - Q[current_state_hash][action]))
+            Q[current_state_hash][action] += ALPHA * (reward + GAMMA * numpy.argmax(Q[next_state_hash] - Q[current_state_hash][action]))
     
             # Update the reward values for this episode
             episode_reward += reward
             episode_steps += 1
 
-            if terminated: 
-                steps_log[episode] = episode_steps
-                rewards_log[episode] = episode_reward
-                print("Agent successfully completed the episode.")
-                break
-
-            if truncated: 
-                steps_log[episode] = episode_steps
-                rewards_log[episode] = 0
-                print("Agent did not successfully complete the episode.")
+            if terminated or truncated:
+                steps_log.append(episode_steps)
+                rewards_log.append(episode_reward if terminated else 0)
+                print("Episode {}: {}".format(episode + 1, "Success" if terminated else "Failed"))
                 break
 
             # Episode is still going, get ready for the next step
@@ -99,3 +90,10 @@ def qlearning():
             #Until S is terminal
 
     return Q, steps_log, rewards_log
+
+
+if __name__ == "__main__":
+    env = gym.make("MiniGrid-LavaCrossingS11N5-v0")
+    env = SymbolicObsWrapper(env)
+    qlearning()
+    env.close()
