@@ -2,12 +2,11 @@ import gymnasium as gym
 import numpy as np
 import minigrid
 import matplotlib as plt
-import const
 
 from collections import defaultdict
 
 from minigrid.wrappers import SymbolicObsWrapper
-from minigrid.env import crossing
+from minigrid.envs import crossing
 from minigrid.core.constants import OBJECT_TO_IDX
 
 MAX_TRIALS = 50
@@ -124,11 +123,12 @@ def qlearn_lambda(env):
                 
             # Q-value update
             # note indexes in Q, E should align
-            for idx in Q:
-                # watch here: 
-                # numpy broadcasting should ensure the indicies match, but may not work as intended
-                Q[idx] += ALPHA * delta * E[idx]
-                E[idx] *= LAMBDA * GAMMA if optimal_action == next_action else 0
+            for s in Q:
+                for a in range(NUM_ACTIONS):
+                    # watch here: 
+                    # numpy broadcasting should ensure the indicies match, but may not work as intended
+                    Q[s][a] += ALPHA * delta * E[s][a]
+                    E[s][a] *= LAMBDA * GAMMA if optimal_action == next_action else 0
                 
             
             # update reward values and log data for plotting
