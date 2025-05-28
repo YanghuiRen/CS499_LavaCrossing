@@ -73,7 +73,7 @@ def qlearning():
 
             if terminated or truncated:
                 steps_log.append(episode_steps)
-                rewards_log.append(episode_reward if terminated else 0)
+                rewards_log.append(episode_reward)
                 print("Episode {}: {}".format(episode + 1, "Success" if terminated else "Failed"))
                 break
 
