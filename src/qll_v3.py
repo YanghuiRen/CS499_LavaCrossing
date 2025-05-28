@@ -69,6 +69,7 @@ def qlearn_lambda(env):
     rewards_log = []
     
     for ep_idx in range(N_EPISODES):
+        print(f"\t\t starting episode {ep_idx + 1}")
         # init s, a
         obs, _ = env.reset()
         current_state = encode_state(obs)
@@ -91,16 +92,34 @@ def qlearn_lambda(env):
                     
             # agent take an action
             next_obs, reward, done, truncated, _ = env.step(next_action)
+            if next_obs is None:
+                print(f"WARNING: next_obs is None!!!!!")
+            if reward is None:
+                print(f"WARNING: reward is None!!!!!")
             
             # use next observation to get next state
             next_state = encode_state(next_obs)
+            if next_state is None:
+                print(f"WARNING: next_state is None!!!!!")
             
             # compute a*, delta, INC e(s, a)
             optimal_action = np.argmax(Q[next_state])
+            if optimal_action is None:
+                print(f"WARNING: optimal_action is None!!!!!")
+                
+            if Q[next_state][optimal_action] is None:
+                print(f"WARNING: Q(s', a*) is None!!!!!")
+            if Q[next_state][next_action] is None:
+                print(f"WARNING: Q(s', a') is None!!!!!")
+                
+                
+            
             if Q[next_state][optimal_action] == Q[next_state][next_action]: # if a' ties for the max, then a* <-- a'
                 optimal_action = next_action
             delta = reward + GAMMA * Q[next_state][optimal_action] - Q[current_state][current_action]
             E[current_state][current_action] += 1
+            if E[current_state][current_action] is None:
+                print("WARNING: e(s, a) is None")
                 
             # Q-value update
             # note indexes in Q, E should align
@@ -108,6 +127,10 @@ def qlearn_lambda(env):
                 for a in range(NUM_ACTIONS):
                     # watch here: 
                     # numpy broadcasting should ensure the indicies match, but may not work as intended
+                    if Q[s][a] is None:
+                        print("WARNING: Q(s, a) is None!!!!!")
+                    if E[s][a] is None:
+                        print("WARNING: e(s, a) is None!!!!!")
                     Q[s][a] += ALPHA * delta * E[s][a]
                     E[s][a] *= LAMBDA * GAMMA if optimal_action == next_action else 0
                 
@@ -138,6 +161,7 @@ def qlearn_lambda(env):
             current_action = next_action
             
             # episode still in progress
+        print(f"\t Termination condition: {get_termination_reason(env)}")
         # end of each step in episode loop
     # end of each episode loop
         
