@@ -7,7 +7,6 @@ from collections import defaultdict
 
 from minigrid.wrappers import SymbolicObsWrapper
 from minigrid.envs import crossing
-# from minigrid.core.constants import OBJECT_TO_IDX
 
 MAX_TRIALS = 50
 N_EPISODES = 5
@@ -17,6 +16,9 @@ GAMMA = 0.975
 ALPHA = 0.5
 EPSILON = 0.3
 LAMBDA = 0.9
+
+# env setup variables
+SEED = 42
 
 DIR_MAP = { # DEBUG
     0: 'right',
@@ -119,7 +121,7 @@ def qlearn_lambda(env):
     
     for ep_idx in range(N_EPISODES):
         # init s, a
-        obs, _ = env.reset()
+        obs, _ = env.reset(seed=SEED)
         print_grid(env, ep_idx + 1) # DEBUG
         print(f"Initial Orientation: {DIR_MAP[env.unwrapped.agent_dir]}")
         current_state = encode_state(obs)
@@ -169,7 +171,7 @@ def qlearn_lambda(env):
                 
                 
             pos = tuple(env.unwrapped.agent_pos) # DEBUG
-            print(f"\t Agent took action {current_action}: {ACT_MAP[current_action]} in state {pos}: currently facing {DIR_MAP[env.unwrapped.agent_dir]}")
+            # print(f"\t Agent took action {current_action}: {ACT_MAP[current_action]} in state {pos}: currently facing {DIR_MAP[env.unwrapped.agent_dir]}")
                 
             # Q-value update
             # note indexes in Q, E should align
@@ -257,6 +259,6 @@ if __name__ == "__main__":
     # env = gym.make("MiniGrid-LavaCrossingS11N5-v0")
     env = gym.make("MiniGrid-LavaCrossingS9N1-v0") # DEBUG
     env = SymbolicObsWrapper(env)
-    obs, _ = env.reset(seed=42)
+    obs, _ = env.reset(seed=SEED)
     qlearn_lambda(env)
     env.close()
