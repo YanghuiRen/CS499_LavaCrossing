@@ -20,13 +20,12 @@ LAMBDA = 0.9
 
 NUM_ACTIONS = 3
 
-
+# Flatten the symbolic image and convert to tuple
 def encode_state(obs):
-    
-    # Flatten the symbolic image and convert to tuple
     flat_image = obs['image'].flatten()
     return tuple(flat_image.tolist())
 
+# for debugging purposes
 def get_termination_reason(env):
     pos = env.unwrapped.agent_pos
     cell = env.unwrapped.grid.get(*pos)
@@ -117,15 +116,21 @@ def qlearn_lambda(env):
             episode_reward += reward
             episode_steps += 1
             
-            if truncated:
-                steps_log.append(episode_steps)
-                rewards_log.append(0)
-                print(f"TIMEOUT: Agent failed to complete episode {ep_idx + 1}: {get_termination_reason(env)}")
-                break
-            elif done:
+            
+            # episode termination check
+            if done:
+                reason = get_termination_reason(env)
+                if reason == "goal":
+                    print(f"SUCCESS: Agent completed episode {ep_idx + 1}")
+                elif reason == "lava":
+                    print(f"FAILURE: Agent fell into lava on episode {ep_idx + 1}")
+                elif truncated:
+                    print(f"TIMEOUT: Agent failed to complete episode {ep_idx + 1}")
+                else:
+                    print(f"UNKOWN: Agent failed for unkown reason on episode {ep_idx + 1}")
+                    
                 steps_log.append(episode_steps)
                 rewards_log.append(episode_reward)
-                print(f"TERMINATED episode {ep_idx + 1}: {get_termination_reason(env)}")
                 break
             
             # prep for next episode step
