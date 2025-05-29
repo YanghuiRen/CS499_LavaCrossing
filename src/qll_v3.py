@@ -9,7 +9,7 @@ from minigrid.wrappers import SymbolicObsWrapper
 from minigrid.envs import crossing
 
 MAX_TRIALS = 50
-N_EPISODES = 5
+N_EPISODES = 1
 MAX_STEPS = 100
 
 GAMMA = 0.975
@@ -58,6 +58,7 @@ def get_termination_reason(env):
 
 def print_grid(env, ep_num):
     grid = env.unwrapped.grid
+    dir = env.unwrapped.agent_dir
     agent_pos = env.unwrapped.agent_pos
 
     print(f"======= Grid Contents: Ep {ep_num} =======")
@@ -66,10 +67,7 @@ def print_grid(env, ep_num):
         for x in range(grid.width):
             cell = grid.get(x, y)
             char = "."
-            if cell is None:
-                char = "."
-            else:
-                # First letter uppercase
+            if cell is not None:
                 char = cell.type[0].upper()
 
             # Overlay agent
@@ -77,7 +75,9 @@ def print_grid(env, ep_num):
                 if char == "L":
                     char = "X"  # Agent on lava marked as X
                 else:
-                    char = "A"  # Agent on normal cell
+                    # char = "A"  # Agent on normal cell
+                    dir_dict = {0: '>', 1: 'v', 2: '<', 3: '^'}
+                    char = dir_dict[dir]
             row.append(char)
         print(" ".join(row))
 
@@ -171,7 +171,8 @@ def qlearn_lambda(env):
                 
                 
             pos = tuple(env.unwrapped.agent_pos) # DEBUG
-            # print(f"\t Agent took action {current_action}: {ACT_MAP[current_action]} in state {pos}: currently facing {DIR_MAP[env.unwrapped.agent_dir]}")
+            print(f"\t Agent took action {next_action}: {ACT_MAP[next_action]} in state {pos}: currently facing {DIR_MAP[env.unwrapped.agent_dir]}")
+            print_grid(env, ep_idx + 1)    
                 
             # Q-value update
             # note indexes in Q, E should align
