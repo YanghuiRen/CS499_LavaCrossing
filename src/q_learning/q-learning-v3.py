@@ -10,7 +10,7 @@ from minigrid.wrappers import SymbolicObsWrapper
 #from minigrid.wrappers import ImgObsWrapper
 
 MAX_TRIALS = 50
-N_EPISODES = 100
+N_EPISODES = 500
 MAX_STEPS = 100
 NUM_ACTIONS = 3
 
@@ -36,6 +36,17 @@ def get_termination_reason(env):
         return "empty"
     return cell.type
 
+decay_rate = 0.01
+
+def eps_decay(episode): 
+    decay_factor = 1 + decay_rate * episode
+    eps = EPSILON / decay_factor
+    return eps
+
+def alph_decay(episode):
+    alph = max(0.1, ALPHA / (1 + decay_rate * episode))
+    return alph
+
 def qlearning(): 
     #Init Q(s,a) = 0
     #Init Q(terminal state, *) = 0
@@ -54,8 +65,11 @@ def qlearning():
         for s in range(MAX_STEPS): 
             #current_state_hash = env.hash(current_state_hash)
 
+            # Generate epsilon value based on decay factor
+            epsi = eps_decay(episode)
+
             # Select an action derived from epsilon greedy policy
-            if random.random() < EPSILON: 
+            if random.random() < epsi: 
                 action = random.randint(0, NUM_ACTIONS - 1)
             else: 
                 try: 
@@ -77,6 +91,9 @@ def qlearning():
             if next_state not in Q: 
                 Q[next_state] = numpy.zeros(NUM_ACTIONS)
 
+            # Generate alpha value based on alpha decay
+            alpha = alph_decay(episode)
+
             Q[current_state][action] += ALPHA * (reward + GAMMA * numpy.max(Q[next_state]) - Q[current_state][action])
     
             # Update the reward values for this episode
@@ -84,26 +101,21 @@ def qlearning():
             episode_steps += 1
 
             if terminated or truncated:
-
-                if terminated:
-                    reason = get_termination_reason(env)
-                    if reason == "goal":
-                        print(f"Episode {episode + 1}: Success! Agent reached the goal.")
-                    elif reason == "lava":
-                        print(f"Episode {episode + 1}: Failure. Agent fell into lava.")
-                    else:
-                        print(f"Episode {episode + 1}: Terminated on: {reason}")
-
-                elif truncated: print(f"Episode {episode + 1}: Failure. Too many steps.")
-
-                else: print(f"Episode {episode + 1}: Terminated for mysterious and unknown reasons.")
-
                 steps_log.append(episode_steps)
                 rewards_log.append(episode_reward)
                 break
 
             # Episode is still going, get ready for the next step
             current_state = next_state
+
+        #Check for termination 
+        reason = get_termination_reason(env)
+        if reason == "goal":
+            print(f"Episode {episode + 1}: Success! Agent reached the goal.")
+        elif reason == "lava":
+            print(f"Episode {episode + 1}: Failure. Agent fell into lava.")
+        elif truncated: print(f"Episode {episode + 1}: Failure. Too many steps.")
+        else: print(f"Episode {episode + 1}: Terminated for unknown reasons.")
 
     #For episode in episodes:
         # Init S
@@ -118,7 +130,7 @@ def qlearning():
 
 
 if __name__ == "__main__":
-    env = gym.make("MiniGrid-LavaCrossingS9N3-v0")
+    env = gym.make("MiniGrid-LavaCrossingS9N1-v0")
     env = SymbolicObsWrapper(env)
     Q, steps_log, rewards_log = qlearning()
     env.close()
