@@ -9,7 +9,7 @@ from minigrid.wrappers import SymbolicObsWrapper
 
 SEED = 42
 
-MAX_TRIALS = 1
+MAX_TRIALS = 20
 N_EPISODES = 20_000
 MAX_STEPS = 100
 NUM_ACTIONS = 3
@@ -17,7 +17,7 @@ NUM_ACTIONS = 3
 
 GAMMA_LIST = [0.975]
 ALPHA_LIST = [0.1, 0.2, 0.3]
-EPSILON_LIST = [0.01, 0.05, 0.1, 0.2]
+EPSILON_LIST = [0.05, 0.1, 0.2]
 
 GAMMA = None
 ALPHA = None

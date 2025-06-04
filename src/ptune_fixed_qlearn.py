@@ -9,7 +9,7 @@ from minigrid.wrappers import SymbolicObsWrapper
 
 SEED = 42
 
-MAX_TRIALS = 1
+MAX_TRIALS = 10
 N_EPISODES = 5_000
 MAX_STEPS = 100 # proxy value, will be overridden by env.unwrapped.max_steps
 NUM_ACTIONS = 3
