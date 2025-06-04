@@ -12,8 +12,8 @@ N_EPISODES = 2000
 # MAX_STEPS = 100
 
 GAMMA = 0.975
-ALPHA = 0.2
-EPSILON = 0.01
+ALPHA = 0.1
+EPSILON = 0.05
 LAMBDA = 0.8
 
 # env setup variables
@@ -36,10 +36,10 @@ def qlearn(env, trial_seed):
     steps_log = []
 
     for episode in range(N_EPISODES): 
-        episode_seed = trial_seed + episode
-        obs, _ = env.reset(seed=episode_seed)
+        obs, _ = env.reset(seed=trial_seed)
 
         current_state = encode_state(obs)
+        # current_state = encode_state(env)
 
         episode_reward = 0 # Reward accumulated during the episode
         episode_steps = 0 # Steps for the current episode
@@ -48,6 +48,7 @@ def qlearn(env, trial_seed):
             action = np.random.randint(NUM_ACTIONS) if np.random.rand() < EPSILON else int(np.random.choice(np.where(Q[current_state] == Q[current_state].max())[0]))
             next_obs, reward, terminated, truncated, _ = env.step(action)
             next_state = encode_state(next_obs)
+            # next_state = encode_state(env)
             next_action = np.argmax(Q[next_state])
 
             # argmax_a' Q[s'][a'] = max{ Q[s'] }
@@ -66,7 +67,7 @@ def qlearn(env, trial_seed):
             current_state = next_state
 
         # Episode has terminated
-        if episode % 100 == 0:
+        if episode % 1000 == 0:
             print(f"Finished episode {episode}.")
 
     return rewards_log, steps_log
@@ -97,8 +98,10 @@ def qlearn_lambda(env, trial_num, trial_seed):
         #     obs, _ = env.reset(seed=trial_seed)
         # else:
         #     obs, _ = env.reset()
-        episode_seed = trial_seed + ep_idx
-        obs, _ = env.reset(seed=episode_seed)
+        # episode_seed = trial_seed + ep_idx
+        # obs, _ = env.reset(seed=episode_seed)
+        # current_state = encode_state(env)
+        obs, _ = env.reset(seed=trial_seed)
 
         current_state = encode_state(obs)
         current_action = select_action(Q, current_state)
@@ -114,6 +117,7 @@ def qlearn_lambda(env, trial_num, trial_seed):
             # agent take an action
             next_obs, reward, done, truncated, _ = env.step(current_action)
             next_state = encode_state(next_obs) # find next state
+            # next_state = encode_state(env)
             next_action = select_action(Q, next_state)
             
             # compute a*, delta, INC e(s, a)
@@ -155,7 +159,7 @@ def qlearn_lambda(env, trial_num, trial_seed):
                     termination_reason = "lava"
                 
                 # make print more sparse:
-                if ep_idx < 5 or (ep_idx + 1) % 100 == 0:
+                if ep_idx < 5 or (ep_idx + 1) % 1000 == 0:
                     print(f"Episode {ep_idx+1}: {termination_reason}, reward={episode_reward:.3f}, steps={episode_steps}")
 
 
@@ -179,21 +183,34 @@ def qlearn_lambda(env, trial_num, trial_seed):
 
 
 if __name__ == "__main__":
-    MAX_TRIALS = 3
+    MAX_TRIALS = 50
     env_name = "MiniGrid-LavaCrossingS9N1-v0"
     # env_name = "MiniGrid-LavaCrossingS9N2-v0"
     # env_name = "MiniGrid-LavaCrossingS11N5-v0"
-    env = gym.make(env_name)
-    MAX_STEPS = env.unwrapped.max_steps
+    # env = SymbolicObsWrapper(gym.make(env_name))
+    # MAX_STEPS = env.unwrapped.max_steps
     
-    ql_rewards_all = []
-    ql_steps_all = []
-    qll_rewards_all = []
-    qll_steps_all = []
+    # ql_rewards_all = []
+    # ql_steps_all = []
+    # qll_rewards_all = []
+    # qll_steps_all = []
 
+    # for trial_idx in range(MAX_TRIALS):
+    #     print(f"\nQ-learning Trial {trial_idx+1}/{MAX_TRIALS}")
+    #     ql_rewards, ql_steps = qlearn(env, SEED + trial_idx)
+
+    ql_rewards_all = [];  ql_steps_all = []
+    qll_rewards_all = []; qll_steps_all = []
     for trial_idx in range(MAX_TRIALS):
-        print(f"\nQ-learning Trial {trial_idx+1}/{MAX_TRIALS}")
-        ql_rewards, ql_steps = qlearn(env, SEED + trial_idx)
+        trial_seed = SEED + trial_idx 
+
+        env = SymbolicObsWrapper(gym.make(env_name))
+        env.reset(seed=trial_seed)
+        MAX_STEPS = env.unwrapped.max_steps
+        print(f"\nQ-learning Trial {trial_idx+1}/{MAX_TRIALS} (seed={trial_seed})")
+        ql_rewards, ql_steps = qlearn(env, trial_seed)
+
+
         ql_rewards_all.append(ql_rewards)
         ql_steps_all.append(ql_steps)
 
@@ -263,5 +280,5 @@ if __name__ == "__main__":
 
     plt.suptitle(f"Q-learning vs Q-learning(λ): α={ALPHA}, ε={EPSILON}, γ={GAMMA}, λ={LAMBDA}, Trials={MAX_TRIALS}, Random Seed", fontsize=14)
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
-    plt.savefig('src/images/compare/DR_random_seed_ql_vs_qll_50_comparison_2000_epi_001epsilon.png', dpi=300, bbox_inches='tight')
+    plt.savefig('src/images/compare/0604_DR_random_seed_ql_vs_qll_50_comparison_2000_epi_001epsilon.png', dpi=300, bbox_inches='tight')
     plt.show()
