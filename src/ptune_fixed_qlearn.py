@@ -141,51 +141,51 @@ if __name__ == "__main__":
 
                 env.close()
 
-            # plot:
-            np_all_rewards = np.array(all_trials_rewards)
-            np_all_steps = np.array(all_trials_steps)
+                # plot:
+                np_all_rewards = np.array(all_trials_rewards)
+                np_all_steps = np.array(all_trials_steps)
 
-            # need to find the average and std:
-            mean_rewards_per_episode = np.mean(np_all_rewards, axis=0)
-            std_rewards_per_episode = np.std(np_all_rewards, axis=0)
+                # need to find the average and std:
+                mean_rewards_per_episode = np.mean(np_all_rewards, axis=0)
+                std_rewards_per_episode = np.std(np_all_rewards, axis=0)
 
-            mean_steps_per_episode = np.mean(np_all_steps, axis=0)
-            std_steps_per_episode = np.std(np_all_steps, axis=0)
+                mean_steps_per_episode = np.mean(np_all_steps, axis=0)
+                std_steps_per_episode = np.std(np_all_steps, axis=0)
 
-            # requirements said: Take the average reward from episode 1
-            episodes_axis = np.arange(1, N_EPISODES + 1)
-            plt.figure(figsize=(14, 6))
+                # requirements said: Take the average reward from episode 1
+                episodes_axis = np.arange(1, N_EPISODES + 1)
+                plt.figure(figsize=(14, 6))
 
-            # draw average reward:
-            plt.subplot(1, 2, 1)
-            plt.plot(episodes_axis, mean_rewards_per_episode, label=f'Mean Reward (Trials={MAX_TRIALS})')
-            plt.fill_between(episodes_axis, 
-                                mean_rewards_per_episode - std_rewards_per_episode, 
-                                mean_rewards_per_episode + std_rewards_per_episode,
-                                alpha=0.2, label='Std Dev Reward')
-            
-            plt.xlabel('Episode')
-            plt.ylabel('Average Reward')
-            plt.title(f'Average Reward per Episode')
-            plt.grid(True)
-            plt.legend()
+                # draw average reward:
+                plt.subplot(1, 2, 1)
+                plt.plot(episodes_axis, mean_rewards_per_episode, label=f'Mean Reward (Trials={MAX_TRIALS})')
+                plt.fill_between(episodes_axis, 
+                                    mean_rewards_per_episode - std_rewards_per_episode, 
+                                    mean_rewards_per_episode + std_rewards_per_episode,
+                                    alpha=0.2, label='Std Dev Reward')
+                
+                plt.xlabel('Episode')
+                plt.ylabel('Average Reward')
+                plt.title(f'Average Reward per Episode')
+                plt.grid(True)
+                plt.legend()
 
-            # draw average steps size:
-            plt.subplot(1, 2, 2)
-            plt.plot(episodes_axis, mean_steps_per_episode, label=f'Mean Steps (Trials={MAX_TRIALS})', color='orange')
-            plt.fill_between(episodes_axis, mean_steps_per_episode - std_steps_per_episode,
-                                            mean_steps_per_episode + std_steps_per_episode,
-                                            color='orange', alpha=0.2, label='Std Dev Steps')
-            plt.xlabel('Episode')
-            plt.ylabel('Average Steps')
-            plt.title(f'Average Steps per Episode')
-            plt.grid(True)
-            plt.legend()
+                # draw average steps size:
+                plt.subplot(1, 2, 2)
+                plt.plot(episodes_axis, mean_steps_per_episode, label=f'Mean Steps (Trials={MAX_TRIALS})', color='orange')
+                plt.fill_between(episodes_axis, mean_steps_per_episode - std_steps_per_episode,
+                                                mean_steps_per_episode + std_steps_per_episode,
+                                                color='orange', alpha=0.2, label='Std Dev Steps')
+                plt.xlabel('Episode')
+                plt.ylabel('Average Steps')
+                plt.title(f'Average Steps per Episode')
+                plt.grid(True)
+                plt.legend()
 
-            plt.suptitle(f"Q-learning: α={ALPHA}, ε={EPSILON}, γ={GAMMA} ({env_name}), Fix Seed", fontsize=14)
-            plt.tight_layout(rect=[0, 0.03, 1, 0.95])
-            
-            import os
-            os.makedirs('images/tune/qlearn', exist_ok=True)
-            plt.savefig(f'images/tune/qlearn/qlearn_{MAX_TRIALS}_{N_EPISODES}.png', dpi=300, bbox_inches='tight')
-            plt.show()
+                plt.suptitle(f"Q-learning: α={ALPHA}, ε={EPSILON}, γ={GAMMA} ({env_name}), Fix Seed", fontsize=14)
+                plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+                
+                import os
+                os.makedirs('images/tune/qlearn', exist_ok=True)
+                plt.savefig(f'images/tune/qlearn/qlearn_{MAX_TRIALS}_{N_EPISODES}.png', dpi=300, bbox_inches='tight')
+                plt.show()
