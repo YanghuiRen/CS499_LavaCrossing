@@ -9,7 +9,7 @@ from minigrid.wrappers import SymbolicObsWrapper
 
 SEED = 42
 
-MAX_TRIALS = 50
+MAX_TRIALS = 5
 N_EPISODES = 5_000
 MAX_STEPS = 100
 NUM_ACTIONS = 3
@@ -66,7 +66,7 @@ def qlearn(env, trial_num, trial_seed):
     rewards_log = []
     steps_log = []
     
-    print(f"\n--- Starting Trial {trial_num + 1}/{MAX_TRIALS} (Seed: {SEED}) ---")
+    # print(f"\n--- Starting Trial {trial_num + 1}/{MAX_TRIALS} (Seed: {SEED}) ---")
 
     for episode in range(N_EPISODES): 
         obs, _ = env.reset(seed=trial_seed)
@@ -111,7 +111,7 @@ def qlearn(env, trial_num, trial_seed):
 if __name__ == "__main__":
     # env = gym.make("MiniGrid-LavaCrossingS11N5-v0")
     # env = gym.make("MiniGrid-LavaCrossingS9N1-v0") # DEBUG
-    env_name = "MiniGrid-LavaCrossingS9N3-v0"
+    env_name = "MiniGrid-LavaCrossingS9N2-v0"
     # env_name = "MiniGrid-LavaCrossingS11N5-v0"
     env = gym.make(env_name)
     MAX_STEPS = env.unwrapped.max_steps
@@ -119,6 +119,7 @@ if __name__ == "__main__":
     env.reset(seed=SEED)
 
     # for each parameter combination
+    count = 0
     for eps in EPSILON_LIST:
         for gamma in GAMMA_LIST:
             for alpha in ALPHA_LIST:
@@ -134,6 +135,7 @@ if __name__ == "__main__":
                     ALPHA = alpha
 
                     # run QL and collect the results:
+                    print(f"\n--- Starting Trial {trial_idx + 1}/{MAX_TRIALS} (Seed: {SEED}) (gamma = {gamma}, epsilon = {eps}, alpha = {alpha})---")
                     rewards_log, steps_log = qlearn(env, trial_idx, SEED)
 
                     all_trials_rewards.append(rewards_log)
@@ -187,5 +189,6 @@ if __name__ == "__main__":
                 
                 import os
                 os.makedirs('images/tune/qlearn', exist_ok=True)
-                plt.savefig(f'images/tune/qlearn/qlearn_{MAX_TRIALS}_{N_EPISODES}.png', dpi=300, bbox_inches='tight')
+                plt.savefig(f'images/tune/qlearn/qlearn_{MAX_TRIALS}_{N_EPISODES}_count{count + 1}.png', dpi=300, bbox_inches='tight')
                 plt.show()
+                count += 1
