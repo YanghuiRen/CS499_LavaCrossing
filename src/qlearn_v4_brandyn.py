@@ -9,8 +9,8 @@ from minigrid.wrappers import SymbolicObsWrapper
 
 SEED = 42
 
-MAX_TRIALS = 1
-N_EPISODES = 15_000
+MAX_TRIALS = 50
+N_EPISODES = 2_000
 MAX_STEPS = 100
 NUM_ACTIONS = 3
 
@@ -23,10 +23,13 @@ EPSILON = 0.1
 # 1 - Right : Turn Right
 # 2 - Forward: Move Forward 
 
+# def encode_state(obs):
+#     # Flatten the symbolic image and convert to tuple
+#     flat_image = obs['image'].flatten()
+#     return tuple(flat_image.tolist())
+
 def encode_state(obs):
-    # Flatten the symbolic image and convert to tuple
-    flat_image = obs['image'].flatten()
-    return tuple(flat_image.tolist())
+    return (tuple(obs['image'].flatten()), obs['direction'])
 
 def get_termination_reason(env):
     pos = env.unwrapped.agent_pos
@@ -57,11 +60,13 @@ FOR EACH episode:
         IF s is terminal
             break
 """
-def qlearn(env, trial_seed): 
+def qlearn(env, trial_num, trial_seed): 
     Q = defaultdict(lambda: np.zeros(NUM_ACTIONS))
     
     rewards_log = []
     steps_log = []
+    
+    print(f"\n--- Starting Trial {trial_num + 1}/{MAX_TRIALS} (Seed: {SEED}) ---")
 
     for episode in range(N_EPISODES): 
         obs, _ = env.reset(seed=trial_seed)
@@ -72,16 +77,17 @@ def qlearn(env, trial_seed):
 
         for _ in range(MAX_STEPS): 
             # Select an action derived from epsilon greedy policy
-            action = np.random.randint(NUM_ACTIONS) if np.random.rand() < EPSILON else np.argmax(Q[current_state])
+            # action = np.random.randint(NUM_ACTIONS) if np.random.rand() < EPSILON else np.argmax(Q[current_state])
+            action = np.random.randint(NUM_ACTIONS) if np.random.rand() < EPSILON \
+                else int(np.random.choice(np.where(Q[current_state] == Q[current_state].max())[0]))
 
             # Have the agent take the step and gather the outputs
             # Use the next observation to get the next state (s')
             next_obs, reward, terminated, truncated, _ = env.step(action)
             next_state = encode_state(next_obs)
-            next_action = np.argmax(Q[next_state])
 
             # argmax_a' Q[s'][a'] = max{ Q[s'] }
-            Q[current_state][action] += ALPHA * (reward + GAMMA * Q[next_state][next_action] - Q[current_state][action])
+            Q[current_state][action] += ALPHA * (reward + GAMMA * np.max(Q[next_state]) - Q[current_state][action])
     
             # Update the reward values for this episode
             episode_reward += reward
@@ -124,7 +130,7 @@ if __name__ == "__main__":
 
 
         # run qll and collect the results:
-        rewards_log, steps_log = qlearn(env, SEED)
+        rewards_log, steps_log = qlearn(env, trial_idx, SEED)
 
         all_trials_rewards.append(rewards_log)
         all_trials_steps.append(steps_log)
@@ -175,5 +181,7 @@ if __name__ == "__main__":
     plt.suptitle(f"Q-learning: α={ALPHA}, ε={EPSILON}, γ={GAMMA} ({env_name}), Fix Seed", fontsize=14)
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
     
-    # plt.savefig('src/images/trials/q_learning_50_trail_1000_eps01.png', dpi=300, bbox_inches='tight')
+    import os
+    os.makedirs('images/trials/qlearn', exist_ok=True)
+    plt.savefig(f'images/trials/qlearn/qlearn_{MAX_TRIALS}_{N_EPISODES}.png', dpi=300, bbox_inches='tight')
     plt.show()
