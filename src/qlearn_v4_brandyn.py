@@ -10,7 +10,7 @@ from minigrid.wrappers import SymbolicObsWrapper
 SEED = 42
 
 MAX_TRIALS = 50
-N_EPISODES = 2_000
+N_EPISODES = 5_000
 MAX_STEPS = 100
 NUM_ACTIONS = 3
 
@@ -22,11 +22,6 @@ EPSILON = 0.1
 # 0 - Left : Turn Left
 # 1 - Right : Turn Right
 # 2 - Forward: Move Forward 
-
-# def encode_state(obs):
-#     # Flatten the symbolic image and convert to tuple
-#     flat_image = obs['image'].flatten()
-#     return tuple(flat_image.tolist())
 
 def encode_state(obs):
     return (tuple(obs['image'].flatten()), obs['direction'])
@@ -111,7 +106,7 @@ def qlearn(env, trial_num, trial_seed):
 if __name__ == "__main__":
     # env = gym.make("MiniGrid-LavaCrossingS11N5-v0")
     # env = gym.make("MiniGrid-LavaCrossingS9N1-v0") # DEBUG
-    env_name = "MiniGrid-LavaCrossingS9N1-v0"
+    env_name = "MiniGrid-LavaCrossingS9N2-v0"
     # env_name = "MiniGrid-LavaCrossingS11N5-v0"
     env = gym.make(env_name)
     MAX_STEPS = env.unwrapped.max_steps
