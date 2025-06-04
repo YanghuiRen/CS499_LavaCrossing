@@ -60,7 +60,7 @@ FOR EACH episode:
         IF s is terminal
             break
 """
-def qlearn(env, trial_num, trial_seed): 
+def qlearn(env, trial_num): 
     Q = defaultdict(lambda: np.zeros(NUM_ACTIONS))
     
     rewards_log = []
@@ -69,7 +69,7 @@ def qlearn(env, trial_num, trial_seed):
     print(f"\n--- Starting Trial {trial_num + 1}/{MAX_TRIALS} (Seed: {SEED}) ---")
 
     for episode in range(N_EPISODES): 
-        obs, _ = env.reset(seed=trial_seed)
+        obs, _ = env.reset()
         current_state = encode_state(obs)
 
         episode_reward = 0 # Reward accumulated during the episode
@@ -130,7 +130,7 @@ if __name__ == "__main__":
 
 
         # run qll and collect the results:
-        rewards_log, steps_log = qlearn(env, trial_idx, SEED + trial_idx)
+        rewards_log, steps_log = qlearn(env, trial_idx)
 
         all_trials_rewards.append(rewards_log)
         all_trials_steps.append(steps_log)
