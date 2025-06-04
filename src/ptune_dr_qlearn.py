@@ -9,7 +9,7 @@ from minigrid.wrappers import SymbolicObsWrapper
 
 SEED = 42
 
-MAX_TRIALS = 5
+MAX_TRIALS = 1
 N_EPISODES = 20_000
 MAX_STEPS = 100
 NUM_ACTIONS = 3
@@ -117,8 +117,10 @@ if __name__ == "__main__":
     MAX_STEPS = env.unwrapped.max_steps
     env = SymbolicObsWrapper(env)
     env.reset()
+    print(f"max steps: {MAX_STEPS}")
 
     # for each parameter combination
+    count = 0
     for eps in EPSILON_LIST:
         for gamma in GAMMA_LIST:
             for alpha in ALPHA_LIST:
@@ -188,5 +190,7 @@ if __name__ == "__main__":
                 
                 import os
                 os.makedirs('images/tune/qlearn', exist_ok=True)
-                plt.savefig(f'images/tune/qlearn/qlearn_{MAX_TRIALS}_{N_EPISODES}.png', dpi=300, bbox_inches='tight')
-                plt.show()
+                plt.savefig(f'images/tune/qlearn/qlearn_dr_{MAX_TRIALS}_{N_EPISODES}_count{count + 1}.png', dpi=300, bbox_inches='tight')
+                # plt.show()
+                print(f"Plot count {count + 1} saved, continuing program.")
+                count += 1

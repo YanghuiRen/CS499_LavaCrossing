@@ -9,9 +9,9 @@ from minigrid.wrappers import SymbolicObsWrapper
 
 SEED = 42
 
-MAX_TRIALS = 5
+MAX_TRIALS = 1
 N_EPISODES = 5_000
-MAX_STEPS = 100
+MAX_STEPS = 100 # proxy value, will be overridden by env.unwrapped.max_steps
 NUM_ACTIONS = 3
 
 
@@ -117,6 +117,8 @@ if __name__ == "__main__":
     MAX_STEPS = env.unwrapped.max_steps
     env = SymbolicObsWrapper(env)
     env.reset(seed=SEED)
+
+    print(f"max steps: {MAX_STEPS}")
 
     # for each parameter combination
     count = 0
