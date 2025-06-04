@@ -190,5 +190,6 @@ if __name__ == "__main__":
                 import os
                 os.makedirs('images/tune/qlearn', exist_ok=True)
                 plt.savefig(f'images/tune/qlearn/qlearn_{MAX_TRIALS}_{N_EPISODES}_count{count + 1}.png', dpi=300, bbox_inches='tight')
-                plt.show()
+                # plt.show()
+                print(f"Plot count {count + 1} saved, continuing program.")
                 count += 1
