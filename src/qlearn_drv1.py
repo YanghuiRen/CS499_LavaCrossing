@@ -9,8 +9,8 @@ from minigrid.wrappers import SymbolicObsWrapper
 
 SEED = 42
 
-MAX_TRIALS = 10
-N_EPISODES = 5_000
+MAX_TRIALS = 50
+N_EPISODES = 2_000
 MAX_STEPS = 100
 NUM_ACTIONS = 3
 
@@ -116,7 +116,7 @@ if __name__ == "__main__":
     env = gym.make(env_name)
     MAX_STEPS = env.unwrapped.max_steps
     env = SymbolicObsWrapper(env)
-    env.reset(seed=SEED)
+    env.reset()
 
     # to store the trials results:
     all_trials_rewards = []

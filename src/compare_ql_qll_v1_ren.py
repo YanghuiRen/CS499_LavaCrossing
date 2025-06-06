@@ -12,8 +12,8 @@ N_EPISODES = 1500
 # MAX_STEPS = 100
 
 GAMMA = 0.975
-ALPHA = 0.2
-EPSILON = 0.1
+ALPHA = 0.1
+EPSILON = 0.05
 LAMBDA = 0.8
 
 # env setup variables

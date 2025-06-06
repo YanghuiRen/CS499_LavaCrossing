@@ -2,18 +2,18 @@ import numpy as np
 import matplotlib.pyplot as plt
 import gymnasium as gym
 import random
+import multiprocessing as mp
 
+from functools import partial
 from collections import defaultdict
 from minigrid.envs import crossing
 from minigrid.wrappers import SymbolicObsWrapper
 
-N_EPISODES = 20_000
-# we call MAX_STEPS from env.unwrapped.max_steps directly in main()
-# MAX_STEPS = 100
+N_EPISODES = 2_000
 
 GAMMA = 0.975
-ALPHA = 0.2
-EPSILON = 0.1
+ALPHA = 0.1
+EPSILON = 0.05
 LAMBDA = 0.8
 
 # env setup variables
@@ -29,14 +29,29 @@ def select_action(Q, state, epsilon=EPSILON):
         return np.random.randint(NUM_ACTIONS)
     return int(np.random.choice(np.where(Q[state] == Q[state].max())[0]))
 
-def qlearn(env): 
+def run_qlearn_trial(trial_idx, env_name, seed):
+    env = gym.make(env_name)
+    env = SymbolicObsWrapper(env)
+    rewards, steps = qlearn(env, seed)
+    env.close()
+    return rewards, steps
+
+def run_qll_trial(trial_idx, env_name, seed):
+    env = gym.make(env_name)
+    env = SymbolicObsWrapper(env)
+    rewards, steps = qlearn_lambda(env, seed)
+    env.close()
+    return rewards, steps
+
+def qlearn(env, trial_seed=None): 
     Q = defaultdict(lambda: np.zeros(NUM_ACTIONS))
+    MAX_STEPS = env.unwrapped.max_steps
     
     rewards_log = []
     steps_log = []
 
     for episode in range(N_EPISODES): 
-        obs, _ = env.reset()
+        obs, _ = env.reset() if trial_seed is None else env.reset(seed=trial_seed)
         current_state = encode_state(obs)
 
         episode_reward = 0 # Reward accumulated during the episode
@@ -64,10 +79,15 @@ def qlearn(env):
             # Episode is still going, get ready for the next step
             current_state = next_state
 
+        # Episode has terminated
+        if episode % 100 == 0:
+            print(f"Finished episode {episode}.")
+
     return rewards_log, steps_log
 
-def qlearn_lambda(env):
+def qlearn_lambda(env, trial_seed=None):
     Q = defaultdict(lambda: np.zeros(NUM_ACTIONS))
+    MAX_STEPS = env.unwrapped.max_steps
     
     # used for plotting graphs
     steps_log = []
@@ -80,8 +100,7 @@ def qlearn_lambda(env):
         E = defaultdict(lambda: np.zeros(NUM_ACTIONS))
         # init s, a
 
-        # obs, _ = env.reset(seed=trial_seed)
-        obs, _ = env.reset()
+        obs, _ = env.reset() if trial_seed is None else env.reset(seed=trial_seed)
 
         current_state = encode_state(obs)
         current_action = select_action(Q, current_state)
@@ -138,7 +157,7 @@ def qlearn_lambda(env):
                     termination_reason = "lava"
                 
                 # make print more sparse:
-                if ep_idx < 5 or (ep_idx + 1) % 100 == 0:
+                if (ep_idx + 1) % 100 == 0:
                     print(f"Episode {ep_idx+1}: {termination_reason}, reward={episode_reward:.3f}, steps={episode_steps}")
 
 
@@ -149,15 +168,6 @@ def qlearn_lambda(env):
                     goal_count += 1
                 break
         
-    # DEBUG: print out the results:
-    print(f"\n===============================")
-    # print(f"--- Trial {trial_num + 1} Result: ---")
-    print(f"Training {N_EPISODES} episodes.")
-    print(f"Total reached: {goal_count} times goal")
-    print(f"Success rate: {goal_count / N_EPISODES * 100:.2f}%")
-    print(f"===============================")
-        
-    # return Q
     return rewards_log, steps_log
 
 
@@ -166,26 +176,32 @@ if __name__ == "__main__":
     env_name = "MiniGrid-LavaCrossingS9N1-v0"
     # env_name = "MiniGrid-LavaCrossingS9N2-v0"
     # env_name = "MiniGrid-LavaCrossingS11N5-v0"
-    env = gym.make(env_name)
-    MAX_STEPS = env.unwrapped.max_steps
-    
-    ql_rewards_all = []
-    ql_steps_all = []
-    qll_rewards_all = []
-    qll_steps_all = []
+    # env = gym.make(env_name)
+    # MAX_STEPS = env.unwrapped.max_steps
+        
+    # Parallel execution across CPU cores
+    ql_results = []
+    qll_results = []
+    with mp.Pool(mp.cpu_count()) as pool:
+        # print("\nRunning Q-learning Trials in Parallel...")
+        # ql_results = pool.map(partial(run_qlearn_trial, env_name=env_name, seed=SEED), range(MAX_TRIALS))
+        # print("\nRunning Q-learning(λ) Trials in Parallel...")
+        # qll_results = pool.map(partial(run_qll_trial, env_name=env_name, seed=SEED), range(MAX_TRIALS))
+        args = [(i, env_name, SEED) for i in range(MAX_TRIALS)]
+        print("\nRunning Q-learning Trials in Parallel...")
+        ql_results = pool.starmap(run_qlearn_trial, args)
+        
+        print("\nRunning Q-learning(λ) Trials in Parallel...")
+        qll_results = pool.starmap(run_qll_trial, args)
 
-    for trial_idx in range(MAX_TRIALS):
-        print(f"\nQ-learning Trial {trial_idx+1}/{MAX_TRIALS}")
-        ql_rewards, ql_steps = qlearn(env)
-        ql_rewards_all.append(ql_rewards)
-        ql_steps_all.append(ql_steps)
-
-        print(f"\nQ(λ) Trial {trial_idx+1}/{MAX_TRIALS}")
-        qll_rewards, qll_steps = qlearn_lambda(env, trial_idx)
-        qll_rewards_all.append(qll_rewards)
-        qll_steps_all.append(qll_steps)
-
-    env.close()
+    # Unpack results
+    ql_rewards_all, ql_steps_all = zip(*ql_results)
+    qll_rewards_all, qll_steps_all = zip(*qll_results)
+    print(f"ql results - {np.array(ql_results).shape}, qll results - {np.array(qll_results).shape}")
+    ql_results = np.array(ql_results)
+    qll_results = np.array(qll_results)
+    print(f"unzip ql results - {np.array(ql_rewards_all).shape}, unzip qll results - {np.array(ql_steps_all).shape}")
+    print(f"unzip ql results - {np.array(qll_rewards_all).shape}, unzip qll results - {np.array(qll_steps_all).shape}")
 
     ql_rewards_np = np.array(ql_rewards_all)
     ql_steps_np = np.array(ql_steps_all)
